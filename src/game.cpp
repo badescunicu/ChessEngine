@@ -4,27 +4,13 @@
 #include <cstdlib>
 #include <game.hpp>
 
+#define change_turn(color) (color == WHITE ? color = BLACK : color = WHITE)
+
 using namespace std;
-
-void think_and_move(const string &last_move_received)
-{
-    /* here we can resign like this: cout << "resign\n"; */
-
-    if (last_move_received.size() == 0) {
-        /* the first move */
-        cout << "move c2c3\n";
-    } else {
-        /* creating a mirrored move */
-        string temp(last_move_received);
-        temp[1] = '0' + '9' - temp[1];
-        temp[3] = '0' + '9' - temp[3];
-        cout << "move " << temp << "\n";
-    }
-}
 
 int main() {
     bool force;
-    Color my_color, color_on_move;
+    Color color_on_move;
     std::string x_command, last_move_received;
     Game *g = NULL;
 
@@ -41,30 +27,22 @@ int main() {
             cout << "\n";
         } else if (x_command == "new") {
             force = false;
-            my_color = BLACK;
             color_on_move = WHITE;
             last_move_received = string();
-            g = new Game(my_color);
+            g = new Game(BLACK);
             log << "Created new game\n";
             log.flush();
         } else if (x_command ==  "quit") {
             return 0;
         } else if (x_command ==  "force") {
             force = true;
-            my_color = NO_COLOR;
+            g->set_color(NO_COLOR);
         } else if (x_command ==  "go") {
             /* swap colors */
             force = false;
-            my_color = color_on_move;
-            g->set_color(my_color);
-            if(last_move_received.size() > 0)
-              g->get_move(last_move_received);
-            else
-              cout << g->send_best_move() << '\n';
-            if(color_on_move == WHITE)
-              color_on_move = BLACK;
-            else
-              color_on_move = WHITE;
+            g->set_color(color_on_move);
+            cout << g->send_best_move() << '\n';
+	    change_turn(color_on_move);
         } else if (x_command.find("usermove") == 0) {
 
             /* x_command is like this: "usermove c8h3" */
@@ -78,24 +56,15 @@ int main() {
                  * were made. Xboards tells what the moves were. We have to
                  * simulate them without giving any response.
                  */
-                if(color_on_move == WHITE)
-                  color_on_move = BLACK;
-                else
-                  color_on_move = WHITE;
+                g->get_move(last_move_received);
+		change_turn(color_on_move);
             } else {
-
-              if(color_on_move == WHITE)
-                color_on_move = BLACK;
-              else
-                color_on_move = WHITE;
+              change_turn(color_on_move);
 
               g->get_move(last_move_received);
               cout << g->send_best_move() << '\n';
-
-              if(color_on_move == WHITE)
-                color_on_move = BLACK;
-              else
-                color_on_move = WHITE;
+              
+	      change_turn(color_on_move);
             }
 
         } else if (x_command.find("protover") != string::npos) {
