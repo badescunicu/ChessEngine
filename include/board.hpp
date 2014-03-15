@@ -41,7 +41,10 @@ class Board {
   void apply_move(const Move &m) {
     board[m.first.first][m.first.second]->do_move(m.second);
     std::swap(board[m.first.first][m.first.second], board[m.second.first][m.second.second]);
-    board[m.first.first][m.first.second] = NULL;
+    if(board[m.first.first][m.first.second] != NULL) {
+      delete board[m.first.first][m.first.second];
+      board[m.first.first][m.first.second] = NULL;
+    }
   }
 };
 #endif

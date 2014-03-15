@@ -15,10 +15,12 @@
 
 typedef std::pair<int, int> Position;
 typedef std::pair<Position, Position> Move;
-enum Color { WHITE, BLACK };
+enum Color { WHITE, BLACK, NO_COLOR };
 
 class Piece {
 public:
+  virtual ~Piece() {
+  }
   virtual std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) = 0;
   void do_move(const Position& pos) {
     this->pos = pos;
