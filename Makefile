@@ -1,5 +1,5 @@
 CC=g++
-FLAGS=-Wall -std=c++0x
+FLAGS=-Wall -std=c++0x -g
 EXE=chess
 SRC=src
 INCLUDE_FLAGS=-Iinclude

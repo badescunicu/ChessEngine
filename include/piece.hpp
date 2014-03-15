@@ -2,9 +2,9 @@
 #define _PIECE_
 #include <vector>
 #include <utility>
-
+#include <functional>
 /*
- * Value in pawns for every piece
+ * Value in Pawns for every Piece
  */
 #define PAWN_VALUE 1
 #define BISHOP_VALUE 3 
@@ -12,73 +12,85 @@
 #define ROOK_VALUE 5
 #define QUEEN_VALUE 8
 #define KING_VALUE 0xffffff
-#define row first
-#define column second
 
-namespace chess {
+typedef std::pair<int, int> Position;
+typedef std::pair<Position, Position> Move;
+enum Color { WHITE, BLACK };
 
-typedef std::pair<int,int> position;
-
-class piece {
- public:
-  virtual std::vector<position> get_all_moves() = 0;
-  void do_move(const position& pos) {
+class Piece {
+public:
+  virtual std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) = 0;
+  void do_move(const Position& pos) {
     this->pos = pos;
-  }
-  piece(int value, const position& pos) : value(value), pos(pos) {} 
-  piece(int value) : value(value) {}
- protected:  
+  } 
+
+  Piece(int value, const Position& pos, const Color& color) : color(color), pos(pos), value(value) {} 
+  Piece(int value) : value(value) {} 
+  Color color;
+protected:  
   int value;
-  position pos;
+  Position pos;
 };
 
-class pawn : public piece {
- public:
-  pawn() : piece(PAWN_VALUE) {}
-  pawn(const position& pos) : piece(PAWN_VALUE, pos) {}
-  std::vector<position> get_all_moves(){
+class Pawn : public Piece {
+public:
+  Pawn() : Piece(PAWN_VALUE) {}
+  Pawn(const Position& pos, const Color& color) : Piece(PAWN_VALUE, pos, color) {}
+  std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
+    return std::vector<Move>();
   } 
 };
 
-
-class bishop : public piece {
- public:
-  bishop() : piece(KNIGHT_VALUE) {}
-  bishop(const position& pos) : piece(KNIGHT_VALUE, pos) {}
-  std::vector<position> get_all_moves(){
+class Bishop : public Piece {
+public:
+  Bishop() : Piece(KNIGHT_VALUE) {}
+  Bishop(const Position& pos, const Color& color) : Piece(KNIGHT_VALUE, pos, color) {}
+  std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
+    return std::vector<Move>();
   } 
 };
 
-class knight : public piece {
- public:
-  knight() : piece(KNIGHT_VALUE) {}
-  knight(const position& pos) : piece(KNIGHT_VALUE, pos) {}
-  std::vector<position> get_all_moves(){
+class Knight : public Piece {
+public:
+  Knight() : Piece(KNIGHT_VALUE) {}
+  Knight(const Position& pos, const Color& color) : Piece(KNIGHT_VALUE, pos, color) {}
+  std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
+    std::cout << this->pos.first << ' ' << this->pos.second << '\n';
+    int dl[] = {1, 2, 2, 1, -1, -2, -2, 1};
+    int dc[] = {-2, -1, 1, 2, 2, 1, -1, -2};
+    std::vector<Move> ret;
+    for(int i = 0; i < 8; i++)
+      if(valid(pos.first + dl[i], pos.second + dc[i]))
+        ret.push_back(std::make_pair(this->pos,
+                      std::make_pair(pos.first + dl[i], pos.second + dc[i])));
+    return ret;
   } 
 };
 
-class rook : public piece {
- public:
-  rook() : piece(ROOK_VALUE) {}
-  rook(const position& pos) : piece(ROOK_VALUE, pos) {}
-  std::vector<position> get_all_moves(){
+class Rook : public Piece {
+public:
+  Rook() : Piece(ROOK_VALUE) {}
+  Rook(const Position& pos, const Color& color) : Piece(ROOK_VALUE, pos, color) {}
+  std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
+    return std::vector<Move>();
   }
 };
 
-class queen : public piece {
- public:
-  queen() : piece(QUEEN_VALUE) {}
-  queen(const position& pos) : piece(QUEEN_VALUE, pos) {}
-  std::vector<position> get_all_moves(){
+class Queen : public Piece {
+public:
+  Queen() : Piece(QUEEN_VALUE) {}
+  Queen(const Position& pos, const Color& color) : Piece(QUEEN_VALUE, pos, color) {}
+  std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
+    return std::vector<Move>();
   }
 };
 
-class king : public piece {
- public:
-  king() : piece(KING_VALUE) {}
-  king(const position& pos) : piece(KING_VALUE, pos) {} 
-  std::vector<position> get_all_moves(){
+class King : public Piece {
+public:
+  King() : Piece(KING_VALUE) {}
+  King(const Position& pos, const Color& color) : Piece(KING_VALUE, pos, color) {} 
+  std::vector<Move> get_all_moves(const std::function<bool(int, int)>& valid){
+    return std::vector<Move>();
   }
 };
-}
 #endif
