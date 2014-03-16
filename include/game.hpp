@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <ctime>
 #include "board.hpp"
 
 using std::string;

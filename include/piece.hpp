@@ -11,7 +11,7 @@
 #define KNIGHT_VALUE 4
 #define ROOK_VALUE 5
 #define QUEEN_VALUE 8
-#define KING_VALUE 0xffffff
+#define KING_VALUE 0
 
 typedef std::pair<int, int> Position;
 typedef std::pair<Position, Position> Move;
