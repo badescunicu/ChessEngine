@@ -16,17 +16,91 @@ class Game {
 private:
   Board board;
   Color color;
-  ofstream log;
 public:
-  Game(const Color& color) : board(), color(color), log("game.log") {
-  }
+  Game(const Color& color) : board(), color(color) {}
 
   void start() {
   }
 
+  bool check_value(int row, int col, int value) {
+    if(board[row][col] == NULL)
+      return false;
+    return (board[row][col]->getValue() == value);
+  }
+
   bool checked() {
+    Position pos = make_pair((color == WHITE) ? 0 : 7, 4);
+    int line_inc = (color == WHITE) ? 1 : -1;
+    int row, column;
+    for(int i = 1; i < 8; i++) {
+      row = pos.first + i * line_inc;
+      column = pos.second;
+      if(board[row][column] && board[row][column]->color == color)
+        break;
+      if(check_value(row, column, QUEEN_VALUE) || check_value(row, column, ROOK_VALUE))
+        return true;
+      if(board[row][column] && board[row][column]->color != color)
+        break;
+    }
+
+    for(int i = 1; i <= 3; i++) {
+      row = pos.first;
+      column = pos.second + i; 
+      if(board[row][column] && board[row][column]->color == color)
+        break;
+      if(check_value(row, column, QUEEN_VALUE) || check_value(row, column, ROOK_VALUE))
+        return true;
+      if(board[row][column] && board[row][column]->color != color)
+        break;
+    }
+
+    for(int i = 1; i <= 4; i++) {
+      row = pos.first;
+      column = pos.second - i; 
+      if(board[row][column] && board[row][column]->color == color)
+        break;
+      if(check_value(row, column, QUEEN_VALUE) || check_value(row, column, ROOK_VALUE))
+        return true;
+      if(board[row][column] && board[row][column]->color != color)
+        break;
+    }
+    
+    for(int i = 1; i <= 3; i++) {
+      row = pos.first + i * line_inc;
+      column = pos.second + i;
+      if(board[row][column] && board[row][column]->color == color)
+        break;
+      if(check_value(row, column, QUEEN_VALUE) || check_value(row, column, BISHOP_VALUE))
+        return true;
+      if(board[row][column] && board[row][column]->color != color)
+        break;
+    }
+
+    for(int i = 1; i <= 4; i++) {
+      row = pos.first + i * line_inc;
+      column = pos.second - i;
+      if(board[row][column] && board[row][column]->color == color)
+        break;
+      if(check_value(row, column, QUEEN_VALUE) || check_value(row, column, BISHOP_VALUE))
+        return true;
+      if(board[row][column] && board[row][column]->color != color)
+        break;
+    }
+
+    int dl[] = {1, 2, 2, 1};
+    int dc[] = {2, 1, -1, 2};
+
+    for(int i = 0; i < 4; i++) {
+      row = pos.first + dl[i] * line_inc;
+      column = pos.second + dc[i];
+      if(check_value(row, column, KNIGHT_VALUE) && board[row][column]->color != color) 
+        return true;
+    }
+
     return false;
   }
+
+
 
   void set_color(const Color& color) {
     this->color = color;
@@ -36,34 +110,32 @@ public:
     int size = Board::BOARD_SIZE;
     vector<Move> moves;
     if(checked())
-      return "resign\n";
+      return "resign";
     string ret("move ");  
 
     for(int i = 0; i < size; i++)
       for(int j = 0; j < size; j++)
         if(board[i][j] != NULL && board[i][j]->color == color) {
           vector<Move> valid_moves = board[i][j]->get_all_moves(
-          [&](int row, int column) -> bool
-          {
-           return ((row >= 0 && row < 8) && (column >= 0 && column < 8) &&
-                    (board[row][column] == NULL || board[row][column]->color != color));
-          });
+              [&](int row, int column) -> bool
+              {
+              return ((row >= 0 && row < 8) && (column >= 0 && column < 8) &&
+                      (board[row][column] == NULL || board[row][column]->color != color));
+              });
           moves.insert(moves.end(), valid_moves.begin(), valid_moves.end());
         }        
-      srand(time(0));
-      if(moves.size() == 0)
-        return "resign";
-      Move move = moves[rand() % moves.size()];
+    srand(time(0));
+    if(moves.size() == 0)
+      return "resign";
+    Move move = moves[rand() % moves.size()];
 
-      ret.push_back(move.first.second + 'a'); 
-      ret.push_back(move.first.first + 1 + '0');
-      ret.push_back(move.second.second + 'a');
-      ret.push_back(move.second.first + 1 + '0');
+    ret.push_back(move.first.second + 'a'); 
+    ret.push_back(move.first.first + 1 + '0');
+    ret.push_back(move.second.second + 'a');
+    ret.push_back(move.second.first + 1 + '0');
 
-      log << ret << '\n';
-      log.flush();
-      board.apply_move(move); 
-      return ret;
+    board.apply_move(move); 
+    return ret;
   } 
 
   void get_move(string moveStr) {
