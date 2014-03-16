@@ -17,7 +17,7 @@ private:
   Board board;
   Color color;
 public:
-  Game(const Color& color) : board(), color(color) {}
+  Game(const Color& color, GameType type) : board(type), color(color) {}
 
   void start() {
   }
@@ -114,6 +114,10 @@ public:
     this->color = color;
   }
 
+  Color get_color() {
+    return this->color;
+  }
+
   string send_best_move() {
     int size = Board::BOARD_SIZE;
     vector<Move> moves;
@@ -150,6 +154,10 @@ public:
     Move move = make_pair(make_pair(moveStr[1] - 1 - '0', moveStr[0] - 'a'),
                           make_pair(moveStr[3] - 1 - '0', moveStr[2] - 'a'));
     board.apply_move(move);
+  }
+
+  void add_piece(string piece, Color color) {
+    board.add_piece(piece, color);
   }
 };
 #endif

@@ -4,73 +4,111 @@
 #include <cstdlib>
 #include <game.hpp>
 
-#define change_turn(color) (color == WHITE ? color = BLACK : color = WHITE)
+void change_turn(Color &color) {
+    if (color == WHITE)
+      color = BLACK;
+    else if (color == BLACK)
+      color = WHITE;
+}
 
-using namespace std;
+void output(std::ofstream &log, std::string text) {
+    log << "Sent:     " << text << "\n";
+    log.flush();
+    std::cout << text << "\n";
+}
+
+void print_status(std::ofstream &log, bool force, Color me, Color on_move)
+{
+    log << "Status:   I'm ";
+    switch (me) {
+      case WHITE: log << " WHITE"; break;
+      case BLACK: log << " BLACK"; break;
+      default:    log << "NOBODY";
+    }
+    log << ". It's ";
+    switch (on_move) {
+      case WHITE: log << " WHITE"; break;
+      case BLACK: log << " BLACK"; break;
+      default:    log << "NOBODY";
+    }
+    log << "'s turn. Force mode: " << (force ? " On." : "Off.") << "\n";
+    log.flush();
+}
 
 int main() {
-    bool force;
-    Color color_on_move;
+    bool force = false;
+    Color color_on_move = NO_COLOR, last_color_received = NO_COLOR;
     std::string x_command, last_move_received;
     Game *g = NULL;
 
-    ofstream log("log");
+    std::ofstream log("log");
     // Make the input unbuffered
-    cin.rdbuf()->pubsetbuf(0, 0);
-    cout.rdbuf()->pubsetbuf(0, 0);
+    std::cin.rdbuf()->pubsetbuf(0, 0);
+    std::cout.rdbuf()->pubsetbuf(0, 0);
 
     while (1) {
       std::getline(std::cin, x_command);
-      log << x_command << '\n';
+      log << "Received: " << x_command << '\n';
       log.flush();
       if (x_command == "xboard") {
-        cout << "\n";
+        output(log, "");
       } else if (x_command == "new") {
         force = false;
         color_on_move = WHITE;
         last_move_received = string();
-        g = new Game(BLACK);
-        log << "Created new game\n";
-        log.flush();
+        if (g)
+          delete g;
+        g = new Game(BLACK, DEFAULT);
       } else if (x_command ==  "quit") {
         return 0;
       } else if (x_command ==  "force") {
         force = true;
-        g->set_color(NO_COLOR);
+        if (g)
+          g->set_color(NO_COLOR);
       } else if (x_command ==  "go") {
-        /* swap colors */
         force = false;
+        if (color_on_move == NO_COLOR)
+           color_on_move = last_color_received;
         g->set_color(color_on_move);
-        cout << g->send_best_move() << '\n';
+        output(log, g->send_best_move());
         change_turn(color_on_move);
       } else if (x_command.find("usermove") == 0) {
-
-        /* x_command is like this: "usermove c8h3" */
-
-        log << "Receveid move " << x_command << '\n';
-        log.flush();
         last_move_received = x_command.substr(9);
         if (force) {
-
-          /* This happens when the engine is loaded after several moves
-           * were made. Xboards tells what the moves were. We have to
-           * simulate them without giving any response.
-           */
           g->get_move(last_move_received);
           change_turn(color_on_move);
         } else {
           change_turn(color_on_move);
-
           g->get_move(last_move_received);
-          cout << g->send_best_move() << '\n';
-
+          output(log, g->send_best_move());
           change_turn(color_on_move);
         }
-
       } else if (x_command.find("protover") != string::npos) {
-        cout << "feature done=1 sigint=0 sigterm=0 usermove=1\n";
-        cout << "feature myname=\"Carlsen's Apprentices\"\n";
+        output(log, "feature done=1 sigint=0 sigterm=0 usermove=1");
+        output(log, "feature myname=\"Carlsen's Apprentices\"");
+      } else if (x_command ==  "white") {
+        last_color_received = WHITE;
+      } else if (x_command ==  "black") {
+        last_color_received = BLACK;
+      } else if (x_command ==  "edit") {
+        if (g)
+          delete g;
+        g = new Game(NO_COLOR, CUSTOM);
+        last_move_received = string();
+        color_on_move = NO_COLOR;
+        std::getline(std::cin, x_command); // skipping '#'
+        std::getline(std::cin, x_command);
+        while (x_command != "c") {
+          g->add_piece(x_command, WHITE);
+          std::getline(std::cin, x_command);
+        }
+        std::getline(std::cin, x_command);
+        while (x_command != ".") {
+          g->add_piece(x_command, BLACK);
+          std::getline(std::cin, x_command);
+        }
       }
+      print_status(log, force, (g ? g->get_color() : NO_COLOR), color_on_move);
     }
     delete g;
     return 0;
