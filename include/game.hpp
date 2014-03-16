@@ -97,6 +97,14 @@ public:
         return true;
     }
 
+    row = pos.first + line_inc;
+    column = pos.second - 1;
+    if(check_value(row, column, PAWN_VALUE) && board[row][column]->color != color)
+      return true;
+    column = pos.second + 1;
+    if(check_value(row, column, PAWN_VALUE) && board[row][column]->color != color)
+      return true;
+
     return false;
   }
 
