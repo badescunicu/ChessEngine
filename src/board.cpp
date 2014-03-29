@@ -67,6 +67,7 @@ void Board::apply_move(const unsigned short move) {
 
 void Board::print() {
     logger.log("Printing board");
+    int test = 7;
     for (int i = 7; i >= 0; i--) {
         for (int j = 0; j <= 7; j++) {
             logger.out << std::setw(2) << get_piece(i, j) << " ";

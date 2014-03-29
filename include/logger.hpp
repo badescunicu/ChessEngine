@@ -10,10 +10,10 @@ public:
            const std::string prefix = "[General] ");
     void log(const std::string message);
     void log(const int number);
-    // The raw version does not print prefix and endl
-    void log_raw(const std::string message);
-    void log_raw(const int number);
+    void log_binary(const void* source, const int size);
     std::ofstream out;
+
+    ~Logger();
 private:
     // Name of the log_file, it defaults to "log.txt"
     std::string log_file;
