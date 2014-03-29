@@ -1,8 +1,11 @@
 #include <iostream>
+#include <iomanip>
 #include <board.hpp>
 #include <piece.hpp>
+#include <logger.hpp>
 
-Board::Board() {
+Board::Board() : logger("board_log.txt", "[Board] ") {
+    // Initialize the board to 0
     for (int i = 0; i < 8; i++) {
         board[i] = 0;
     }
@@ -40,7 +43,7 @@ Board::Board() {
     set_pos_value(7, 4, KING_B);
 }
 
-void Board::set_pos_value(const int row, const int column, const int piece) {
+void Board::set_pos_value(const int row, const int column, const PieceType piece) {
     // Set the position to NONE
     board[row] = board[row] & (~(15 << (column << 2)));
     // Set the position to the actual piece
@@ -51,11 +54,23 @@ unsigned int Board::get_piece(const int row, const int column) {
     return ((board[row] & (15 << (column << 2))) >> (column << 2));
 }
 
+void Board::apply_move(const unsigned short move) {
+    int initial_row = move & 7;
+    int initial_column = (move & 56) >> 3;
+    int destination_row = (move & 448) >> 6;
+    int destination_column = (move & 3584) >> 9;
+    set_pos_value(initial_row, initial_column, NONE);
+    set_pos_value(destination_row, destination_column,
+                  static_cast<PieceType>(get_piece(initial_row,
+                                                   initial_column)));
+}
+
 void Board::print() {
+    logger.log("Printing board");
     for (int i = 7; i >= 0; i--) {
         for (int j = 0; j <= 7; j++) {
-            std::cout << get_piece(i, j) << " ";
+            logger.out << std::setw(2) << get_piece(i, j) << " ";
         }
-        std::cout << std::endl;
+        logger.out << std::endl;
     }
 }

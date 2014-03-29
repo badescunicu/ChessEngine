@@ -16,3 +16,5 @@ enum PieceType {
     QUEEN_B, 
     KING_B 
 };
+
+#endif
