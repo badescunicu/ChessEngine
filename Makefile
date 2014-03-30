@@ -6,5 +6,5 @@ INCLUDE_FLAGS=-Iinclude
 XBOARD_DIR=~/xboard/xboard-4.7.2/
 
 build:
-	$(CC) $(FLAGS) $(INCLUDE_FLAGS) $(SRC)/*.cpp -o $(XBOARD_DIR)/chess
+	$(CC) $(FLAGS) $(INCLUDE_FLAGS) $(SRC)/*.cpp -o chess
 	

@@ -57,7 +57,7 @@ unsigned int Board::get_piece(const int row, const int column) {
 }
 
 void Board::apply_move(const unsigned short move) {
-    logger.log("decoding move:");
+    logger.log("Entered in apply_move. Decoding move");
     logger.log_binary(&move, sizeof(unsigned short));
 
     int initial_row = move & 7;
@@ -71,8 +71,13 @@ void Board::apply_move(const unsigned short move) {
 
     PieceType piece_moved = static_cast<PieceType>(get_piece(initial_row,
                                                    initial_column));
-    set_pos_value(initial_row, initial_column, NONE);
-    set_pos_value(destination_row, destination_column, piece_moved);
+    if (piece_moved != NONE) {
+        logger.log("Making move");
+        set_pos_value(initial_row, initial_column, NONE);
+        set_pos_value(destination_row, destination_column, piece_moved);
+    } else {
+        logger.log("No piece is on the given position");
+    }
 }
 
 void Board::print() {

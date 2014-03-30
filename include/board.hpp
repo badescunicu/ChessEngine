@@ -3,6 +3,8 @@
 #include <piece_type.hpp>
 #include <logger.hpp>
 
+#define BOARD_SIZE 8
+
 class Board {
 public:
     Board();
