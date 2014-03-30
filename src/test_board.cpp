@@ -5,7 +5,9 @@
 int main() {
     Board b;
     b.print();
-    b.apply_move(1745);
+    // Test moves
+    b.apply_move(Piece::build_move(6, 0, 3, 0));
+    b.apply_move(Piece::build_move(6, 0, 3, 0));
     b.print();
     return 0;
 }
