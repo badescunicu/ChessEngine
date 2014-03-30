@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <board.hpp>
-#include <piece.hpp>
+#include <piece_type.hpp>
 #include <logger.hpp>
 
 Board::Board() : logger("board_log.txt", "[Board] ") {
@@ -43,6 +43,8 @@ Board::Board() : logger("board_log.txt", "[Board] ") {
     set_pos_value(7, 4, KING_B);
 }
 
+Board::~Board() {}
+
 void Board::set_pos_value(const int row, const int column, const PieceType piece) {
     // Set the position to NONE
     board[row] = board[row] & (~(15 << (column << 2)));
@@ -55,19 +57,26 @@ unsigned int Board::get_piece(const int row, const int column) {
 }
 
 void Board::apply_move(const unsigned short move) {
+    logger.log("decoding move:");
+    logger.log_binary(&move, sizeof(unsigned short));
+
     int initial_row = move & 7;
     int initial_column = (move & 56) >> 3;
     int destination_row = (move & 448) >> 6;
     int destination_column = (move & 3584) >> 9;
+
+    logger.out << "initial_row:"  << initial_row << " initial_column:" <<
+                  initial_column << " destination_row:" << destination_row <<
+                  " destination_column:" << destination_column << std::endl;
+
+    PieceType piece_moved = static_cast<PieceType>(get_piece(initial_row,
+                                                   initial_column));
     set_pos_value(initial_row, initial_column, NONE);
-    set_pos_value(destination_row, destination_column,
-                  static_cast<PieceType>(get_piece(initial_row,
-                                                   initial_column)));
+    set_pos_value(destination_row, destination_column, piece_moved);
 }
 
 void Board::print() {
-    logger.log("Printing board");
-    int test = 7;
+    logger.log("Printing current board state");
     for (int i = 7; i >= 0; i--) {
         for (int j = 0; j <= 7; j++) {
             logger.out << std::setw(2) << get_piece(i, j) << " ";

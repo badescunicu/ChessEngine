@@ -1,6 +1,6 @@
 #ifndef __BOARD__HPP
 #define __BOARD__HPP
-#include <piece.hpp>
+#include <piece_type.hpp>
 #include <logger.hpp>
 
 class Board {
@@ -12,6 +12,7 @@ public:
     void set_pos_value(const int row, const int column, const PieceType piece);
     bool check_for_chess();
     void print();
+    ~Board();
 private:
     unsigned int board[7];
     Logger logger;

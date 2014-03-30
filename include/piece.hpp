@@ -1,20 +1,18 @@
 #ifndef __PIECE__HPP
 #define __PIECE__HPP
+#include <vector>
+#include <board.hpp>
 
-enum PieceType {
-    NONE = 0,
-    PAWN_W, 
-    KNIGHT_W, 
-    BISHOP_W, 
-    ROOK_W, 
-    QUEEN_W, 
-    KING_W, 
-    PAWN_B = 9, 
-    KNIGHT_B, 
-    BISHOP_B, 
-    ROOK_B, 
-    QUEEN_B, 
-    KING_B 
+class Piece {
+public:
+    Piece();
+    static unsigned short build_move(const int initial_row,
+                              const int initial_column,
+                              const int destination_row,
+                              const int destination_column);
+    std::vector<unsigned short> get_available_moves(const int initial_row,
+                                           const int initial_column, const Board& board);
+    ~Piece();
 };
 
 #endif
