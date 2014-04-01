@@ -11,7 +11,7 @@ void change_turn(Color &color) {
       color = WHITE;
 }
 
-void output(std::ofstream &log, std::string text) {
+void output(std::ofstream &log, const std::string& text) {
     log << "Sent:     " << text << "\n";
     log.flush();
     std::cout << text << "\n";
@@ -99,12 +99,12 @@ int main() {
         std::getline(std::cin, x_command); // skipping '#'
         std::getline(std::cin, x_command);
         while (x_command != "c") {
-          g->add_piece(x_command, WHITE);
+          //g->add_piece(x_command, WHITE);
           std::getline(std::cin, x_command);
         }
         std::getline(std::cin, x_command);
         while (x_command != ".") {
-          g->add_piece(x_command, BLACK);
+          //g->add_piece(x_command, BLACK);
           std::getline(std::cin, x_command);
         }
       }

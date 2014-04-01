@@ -1,65 +1,66 @@
 #ifndef _BOARD_
 #define _BOARD_
 #include <vector>
+#include <iostream>
 #include <cassert>
 #include <utility>
 #include <piece.hpp>
 
+using std::cerr;
 enum GameType { DEFAULT, CUSTOM };
 
 class Board {
-  std::vector<std::vector<Piece*>> board; 
+  char **board;
  public:
   static const int BOARD_SIZE = 8;
-  Board(GameType type) : board(BOARD_SIZE, std::vector<Piece*>(BOARD_SIZE, static_cast<Piece*>(0))) {
+  Board(GameType type) {
+    board = (char**)calloc(BOARD_SIZE, sizeof(char*)); 
+    for(int i = 0; i < BOARD_SIZE; i++)
+      board[i] = (char*)calloc(BOARD_SIZE, sizeof(char));
+
     if (type == DEFAULT) {
       for(int i = 0; i < BOARD_SIZE; i++) {
-        board[1][i] = new Pawn(Position(1, i), WHITE); 
-        board[6][i] = new Pawn(Position(6, i), BLACK);
+        board[1][i] = PAWN_W; 
+        board[6][i] = PAWN_B;
       }
 
-      board[0][7] = new Rook(Position(0, 7), WHITE);
-      board[0][0] = new Rook(Position(0, 0), WHITE);
-      board[0][1] = new Knight(Position(0, 1), WHITE);
-      board[0][6] = new Knight(Position(0, 6), WHITE);
-      board[0][5] = new Bishop(Position(0, 5), WHITE);
-      board[0][2] = new Bishop(Position(0, 2), WHITE);
-      board[0][3] = new Queen(Position(0, 3), WHITE);
-      board[0][4] = new King(Position(0, 4), WHITE);
+      board[0][7] = ROOK_W; 
+      board[0][0] = ROOK_W; 
+      board[0][1] = KNIGHT_W; 
+      board[0][6] = KNIGHT_W; 
+      board[0][5] = BISHOP_W;
+      board[0][2] = BISHOP_W; 
+      board[0][3] = QUEEN_W; 
+      board[0][4] = KING_W; 
 
-      board[7][7] = new Rook(Position(7, 7), BLACK);
-      board[7][0] = new Rook(Position(7, 0), BLACK);
-      board[7][1] = new Knight(Position(7, 1), BLACK);
-      board[7][6] = new Knight(Position(7, 6), BLACK);
-      board[7][5] = new Bishop(Position(7, 5), BLACK);
-      board[7][2] = new Bishop(Position(7, 2), BLACK);
-      board[7][3] = new Queen(Position(7, 3), BLACK);
-      board[7][4] = new King(Position(7, 4), BLACK);
+      board[7][7] = ROOK_B; 
+      board[7][0] = ROOK_B; 
+      board[7][1] = KNIGHT_B; 
+      board[7][6] = KNIGHT_B; 
+      board[7][5] = BISHOP_B;
+      board[7][2] = BISHOP_B; 
+      board[7][3] = QUEEN_B; 
+      board[7][4] = KING_B; 
     }
+  }
+
+  char** getBoard() {
+    return board;
   }
 
   ~Board() {
-    for (int i = 0; i < BOARD_SIZE; ++i) {
-      for (int j = 0; j < BOARD_SIZE; ++j) {
-        if (board[i][j])
-          delete board[i][j];
-      }
-    }
+    for (int i = 0; i < BOARD_SIZE; ++i)
+        delete board[i];
+    delete board;
   }
 
-  std::vector<Piece*>& operator [] (int i) { 
-   return board[i]; 
+  void apply_move(const string& move) {
+    std::swap(board[move[1] - '0' - 1][move[0] - 'a'], board[move[3] - '0' - 1][move[2] - 'a']);
+    board[move[1] - '0' - 1][move[0] - 'a'] = 0; 
   }
+  
 
-  void apply_move(const Move &m) {
-    board[m.first.first][m.first.second]->do_move(m.second);
-    std::swap(board[m.first.first][m.first.second], board[m.second.first][m.second.second]);
-    if(board[m.first.first][m.first.second] != NULL) {
-      delete board[m.first.first][m.first.second];
-      board[m.first.first][m.first.second] = NULL;
-    }
-  }
-
+  /*
   void add_piece(std::string piece, Color color) {
     Position pos(piece[2] - 1 - '0', piece[1] - 'a');
     switch (piece[0]) {
@@ -71,5 +72,6 @@ class Board {
       case 'K': board[pos.first][pos.second] = new King(pos, color);
     }
   }
+  */
 };
 #endif
