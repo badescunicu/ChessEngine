@@ -4,10 +4,13 @@
 #include <logger.hpp>
 
 #define BOARD_SIZE 8
+#define COLOR_OF(c) ((c & 8) >> 3)
+
+enum GameType { DEFAULT, CUSTOM };
 
 class Board {
 public:
-    Board();
+    Board(GameType type);
     unsigned int get_piece(const int pos_x, const int pos_y);
     void apply_move(const unsigned short move);
     // Puts the piece on the given position
@@ -16,7 +19,7 @@ public:
     void print();
     ~Board();
 private:
-    unsigned int board[7];
+    unsigned int board[8];
     Logger logger;
 };
 

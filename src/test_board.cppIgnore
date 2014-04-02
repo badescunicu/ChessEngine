@@ -4,7 +4,7 @@
 #include <pawn.hpp>
 
 int main() {
-    Board b;
+    Board b(DEFAULT);
     Pawn p;
     b.print();
     std::vector<unsigned short> moves = p.get_available_moves(1, 0, b);
