@@ -83,25 +83,34 @@ void Board::apply_move(const unsigned short move) {
         logger.log("Making move");
         set_pos_value(initial_row, initial_column, NONE);
         if (after_promotion == NONE) {
+
+            // Check for en passant
+            if ((piece_moved == PAWN_B || piece_moved == PAWN_W) &&
+                (destination_column != initial_column) &&
+                (!get_piece(destination_row, destination_column)))
+                set_pos_value(initial_row, destination_column, NONE);
+
             set_pos_value(destination_row, destination_column, piece_moved);
 
-            // Castling
+            // Check for castling
             if ((piece_moved == KING_B || piece_moved == KING_W) &&
                    (abs(initial_column - destination_column) == 2)) {
-                int rook_column = 2 * destination_column - initial_column;
+                int rook_column = (destination_column << 1) - initial_column;
                 if (rook_column == -1)
                     rook_column = 0;
                 else if (rook_column == 8)
                     rook_column = 7;
                 set_pos_value(initial_row, rook_column, NONE);
-                set_pos_value(initial_row, (initial_column + destination_column) / 2,
+                set_pos_value(initial_row, (initial_column + destination_column) >> 1,
                                            (piece_moved == KING_B ? ROOK_B : ROOK_W));
             }
+
         } else
             set_pos_value(destination_row, destination_column, after_promotion);
     } else {
         logger.log("No piece is on the given position");
     }
+    print();
 }
 
 bool Board::check_for_chess() {
