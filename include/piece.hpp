@@ -30,7 +30,7 @@ public:
                               const PieceType promoted);
 
     virtual std::vector<unsigned short>
-    get_available_moves(const int i, const int j,
+    get_available_moves(const int row, const int col,
                             const Board& board) = 0;
     virtual ~Piece();
 };
