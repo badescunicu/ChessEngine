@@ -55,7 +55,7 @@ void Board::set_pos_value(const int row, const int column, const PieceType piece
     board[row] = board[row] | (piece << (column << 2));
 }
 
-unsigned int Board::get_piece(const int row, const int column) {
+unsigned int Board::get_piece(const int row, const int column) const {
     return ((board[row] & (15 << (column << 2))) >> (column << 2));
 }
 

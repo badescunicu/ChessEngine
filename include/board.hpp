@@ -11,7 +11,7 @@ enum GameType { DEFAULT, CUSTOM };
 class Board {
 public:
     Board(GameType type);
-    unsigned int get_piece(const int pos_x, const int pos_y);
+    unsigned int get_piece(const int pos_x, const int pos_y) const;
     void apply_move(const unsigned short move);
     // Puts the piece on the given position
     void set_pos_value(const int row, const int column, const PieceType piece);

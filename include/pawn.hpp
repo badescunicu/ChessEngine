@@ -6,6 +6,6 @@ public:
     ~Pawn();
 
     std::vector<unsigned short>
-    get_available_moves(const int initial_row, const int initial_column,
+    get_available_moves(const int i, const int j,
                         const Board& board);
 };

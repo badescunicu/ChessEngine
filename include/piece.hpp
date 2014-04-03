@@ -5,6 +5,10 @@
 
 enum Color { WHITE, BLACK, NO_COLOR };
 
+inline bool inside(int i, int j) {
+    return (i >= 0 && i < 8 && j >= 0 && j < 8);
+}
+
 class Piece {
 public:
     Piece();
@@ -26,7 +30,7 @@ public:
                               const PieceType promoted);
 
     virtual std::vector<unsigned short>
-    get_available_moves(const int initial_row, const int initial_column,
+    get_available_moves(const int i, const int j,
                             const Board& board) = 0;
     virtual ~Piece();
 };
