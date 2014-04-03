@@ -21,5 +21,6 @@ Knight::get_available_moves(const int row, const int col,
             result.push_back(Piece::build_move(row, col, dest_row, dest_col)); 
         }
     } 
+
     return result;
 }

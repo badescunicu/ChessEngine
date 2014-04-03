@@ -6,6 +6,6 @@ public:
     ~King();
 
     std::vector<unsigned short>
-    get_available_moves(const int initial_row, const int initial_column,
+    get_available_moves(const int row, const int col,
                         const Board& board);
 };

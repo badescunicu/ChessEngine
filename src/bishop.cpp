@@ -28,5 +28,6 @@ Bishop::get_available_moves(const int row, const int col,
             result.push_back(Piece::build_move(row, col, tmp_row, tmp_col));
         }
     }
+
     return result;
 }
