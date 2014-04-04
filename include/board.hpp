@@ -30,7 +30,7 @@ public:
     bool valid_en_passant(int& row, int& column) const;
     void change_turn();
     void guess_castlings();
-    void apply_move(const unsigned short move);
+    bool apply_move(const unsigned short move);
     // Puts the piece on the given position
     void set_pos_value(const int row, const int column, const PieceType piece);
     bool check_for_chess(const Color& color);

@@ -125,7 +125,7 @@ void Board::guess_castlings() {
         set_castling(BLACK, KINGSIDE, false);
 }
 
-void Board::apply_move(const unsigned short move) {
+bool Board::apply_move(const unsigned short move) {
     logger.log("Entered in apply_move. Decoding move");
     logger.log_binary(&move, sizeof(unsigned short));
 
@@ -153,8 +153,18 @@ void Board::apply_move(const unsigned short move) {
         // Check for en passant, possibly taking the opponent's pawn
         if ((piece_moved == PAWN_B || piece_moved == PAWN_W) &&
                (destination_column != initial_column) &&
-               (!get_piece(destination_row, destination_column)))
-            set_pos_value(initial_row, destination_column, NONE);
+               (!get_piece(destination_row, destination_column))) {
+            int victim_row, victim_column;
+            if (valid_en_passant(victim_row, victim_column) &&
+                    victim_column == destination_column)
+                set_pos_value(initial_row, destination_column, NONE);
+            else {
+                // Restore to the initial board and reject the move
+                logger.log("Move rejected");
+                set_pos_value(initial_row, initial_column, piece_moved);
+                return false;
+            }
+        }
 
         // Check for pawn promotion and realize the move
         if (after_promotion == NONE)
@@ -185,14 +195,23 @@ void Board::apply_move(const unsigned short move) {
         // Update the rook position if castling
         if ((piece_moved == KING_B || piece_moved == KING_W) &&
                (abs(initial_column - destination_column) == 2)) {
-            int rook_column = (destination_column << 1) - initial_column;
-            if (rook_column == -1)
-                rook_column = 0;
-            else if (rook_column == 8)
-                rook_column = 7;
-            set_pos_value(initial_row, rook_column, NONE);
-            set_pos_value(initial_row, (initial_column + destination_column) >> 1,
-                                       (piece_moved == KING_B ? ROOK_B : ROOK_W));
+            if (valid_castling(static_cast<Color>(COLOR_OF(piece_moved)),
+                    (initial_column > destination_column ? QUEENSIDE : KINGSIDE))) {
+                int rook_column = (destination_column << 1) - initial_column;
+                if (rook_column == -1)
+                    rook_column = 0;
+                else if (rook_column == 8)
+                    rook_column = 7;
+                set_pos_value(initial_row, rook_column, NONE);
+                set_pos_value(initial_row, (initial_column + destination_column) >> 1,
+                                           (piece_moved == KING_B ? ROOK_B : ROOK_W));
+            } else {
+                // Restore to the initial board and reject the move
+                logger.log("Invalid move.");
+                set_pos_value(initial_row, initial_column, piece_moved);
+                set_pos_value(destination_row, destination_column, NONE);
+                return false;
+            }
         }
 
         // Updating castlings availability: if a king is moved, the player's both
@@ -218,6 +237,7 @@ void Board::apply_move(const unsigned short move) {
     }
     change_turn();
     print();
+    return true;
 }
 
 bool Board::check_for_chess(const Color& color) {

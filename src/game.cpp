@@ -76,8 +76,8 @@ string Game::send_best_move() {
     return "move " + Piece::move_to_string(move);
 } 
 
-void Game::get_move(const string& move_str) {
-    board.apply_move(Piece::string_to_move(move_str, board.get_color_on_move()));
+bool Game::get_move(const string& move_str) {
+    return board.apply_move(Piece::string_to_move(move_str, board.get_color_on_move()));
 }
 
 void Game::add_piece(string piece, Color color) {

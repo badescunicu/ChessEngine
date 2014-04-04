@@ -60,8 +60,9 @@ int main() {
             input_output(logger, SENT, g->send_best_move());
         } else if (x_command.find("usermove") == 0) {
             last_move_received = x_command.substr(9);
-            g->get_move(last_move_received);
-            if (!force)
+            if (!g->get_move(last_move_received))
+                input_output(logger, SENT, "Illegal move: " + last_move_received);
+            else if (!force)
                 input_output(logger, SENT, g->send_best_move());
         } else if (x_command.find("protover") != std::string::npos) {
             input_output(logger, SENT, "feature done=1 sigint=0 sigterm=0 usermove=1");

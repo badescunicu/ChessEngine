@@ -17,7 +17,7 @@ public:
     Color get_color();
     Color get_color_on_move();
     std::string send_best_move();
-    void get_move(const std::string& moveStr);
+    bool get_move(const std::string& moveStr);
     void add_piece(std::string piece, Color color);
     void guess_castlings();
 };
