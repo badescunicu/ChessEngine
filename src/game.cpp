@@ -19,7 +19,7 @@ using std::vector;
 using std::ofstream;
 
 Game::Game(const Color& my_color, const Color& color_on_move, GameType type) :
-        board(type), my_color(my_color), color_on_move(color_on_move), pieces(7) {
+        board(type, color_on_move), my_color(my_color), pieces(7) {
     pieces[1] = new Pawn();
     pieces[2] = new Knight();
     pieces[3] = new Bishop();
@@ -33,8 +33,8 @@ Game::~Game() {
         delete pieces[i];
 }
 
-bool Game::checked() {
-    return board.check_for_chess();
+bool Game::checked(const Color& color) {
+    return board.check_for_chess(color);
 }
 
 void Game::set_color(const Color& my_color) {
@@ -42,7 +42,7 @@ void Game::set_color(const Color& my_color) {
 }
 
 void Game::set_color_on_move(const Color& color_on_move) {
-    this->color_on_move = color_on_move;
+    board.set_color_on_move(color_on_move);
 }
 
 Color Game::get_color() {
@@ -50,21 +50,14 @@ Color Game::get_color() {
 }
 
 Color Game::get_color_on_move() {
-    return color_on_move;
-}
-
-void Game::change_turn() {
-    if (color_on_move == WHITE)
-        color_on_move = BLACK;
-    else if (color_on_move == BLACK)
-        color_on_move = WHITE;
+    return board.get_color_on_move();
 }
 
 string Game::send_best_move() {
     int size = BOARD_SIZE;
     vector<unsigned short> moves;
-    /*if (checked())
-        return "resign";*/
+    if (checked(board.get_color_on_move()))
+        return "resign";
 
     for (int i = 0; i < size; i++)
         for (int j = 0; j < size; j++) {
@@ -84,12 +77,7 @@ string Game::send_best_move() {
 } 
 
 void Game::get_move(const string& move_str) {
-    Color last_piece_moved = NO_COLOR;
-    if (color_on_move == WHITE)
-        last_piece_moved = BLACK;
-    else if (color_on_move == BLACK)
-        last_piece_moved = WHITE;
-    board.apply_move(Piece::string_to_move(move_str, last_piece_moved));
+    board.apply_move(Piece::string_to_move(move_str, board.get_color_on_move()));
 }
 
 void Game::add_piece(string piece, Color color) {

@@ -3,12 +3,6 @@
 #include <vector>
 #include <board.hpp>
 
-enum Color { WHITE, BLACK, NO_COLOR };
-
-inline bool inside(int i, int j) {
-    return (i >= 0 && i < 8 && j >= 0 && j < 8);
-}
-
 class Piece {
 public:
     Piece();
