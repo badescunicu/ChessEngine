@@ -25,8 +25,9 @@ public:
     void get_king_position(const Color& color, int& row, int& column);
     bool valid_castling(const Color& color, CastlingType type);
     void forbid_castling(const Color& color, CastlingType type);
-    Color get_color_on_move();
+    Color get_color_on_move() const;
     void set_color_on_move(const Color& color_on_move);
+    bool valid_en_passant(int& row, int& column) const;
     void change_turn();
     void apply_move(const unsigned short move);
     // Puts the piece on the given position

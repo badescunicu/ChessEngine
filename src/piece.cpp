@@ -25,6 +25,13 @@ std::string Piece::move_to_string(unsigned short move) {
     ret[0] = ((move & (7 << 3)) >> 3) + 'a';
     ret[3] = ((move & (7 << 6)) >> 6) + '0' + 1; 
     ret[2] = ((move & (7 << 9)) >> 9) + 'a';
+    if (move & 0xF000)
+        switch ((move & 0x7000) >> 12) {
+            case 2: ret += 'n'; break;
+            case 3: ret += 'b'; break;
+            case 4: ret += 'r'; break;
+            case 5: ret += 'q';
+        }
     return ret;
 }
 

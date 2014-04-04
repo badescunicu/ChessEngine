@@ -8,7 +8,7 @@
 Board::Board(GameType type, const Color& color_on_move) : logger("board_log.txt",
                                                                  "[Board] ") {
     // Initialize the board to 0
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         board[i] = 0;
     }
     // Set castlings as possible
@@ -84,13 +84,24 @@ void Board::forbid_castling(const Color& color, CastlingType type) {
     board[8] &= ~(((1 << type) << (color << 1)) << 12);
 }
 
-Color Board::get_color_on_move() {
+Color Board::get_color_on_move() const {
     return static_cast<Color>((board[8] & (3 << 16)) >> 16);
 }
 
 void Board::set_color_on_move(const Color& color_on_move) {
     board[8] &= ~(3 << 16);
     board[8] |= color_on_move << 16;
+}
+
+bool Board::valid_en_passant(int& row, int& column) const {
+    if (board[8] & (1 << 17))
+        return false;  // Edit Mode
+    if (board[8] & (1 << 18)) {
+        row = get_color_on_move() == WHITE ? 4 : 3;
+        column = (board[8] & (7 << 19)) >> 19;
+        return true;
+    }
+    return false;
 }
 
 void Board::change_turn() {
@@ -213,6 +224,8 @@ bool Board::check_for_chess(const Color& color) {
                             ((line_inc[dir] && column_inc[dir]) &&
                              (piece == BISHOP_W || piece == BISHOP_B)))
                     return true;
+                else
+                    break;
             }
             i += line_inc[dir];
             j += column_inc[dir];
@@ -280,15 +293,12 @@ void Board::print() {
     }
 
     // Printing en passant availability
-    if (board[8] & (1 << 18)) {
-        logger.out << "En passant available. ";
-        if (!(board[8] & (1 << 17))) {     // if not in Edit Mode
-            Color on_move = get_color_on_move();
-            logger.out << (on_move == WHITE ? "White" : "Black")
-                       << " can take the pawn at ("
-                       << (on_move == WHITE ? 4 : 3) << ", "
-                       << ((board[8] & (7 << 19)) >> 19) << ").";
-        }
+    int pawn_row, pawn_column;
+    if (valid_en_passant(pawn_row, pawn_column)) {
+        logger.out << "En passant available: "
+                   << (get_color_on_move() == WHITE ? "White" : "Black")
+                   << " can take the pawn at ("
+                   << pawn_row << ", " << pawn_column << ").";
         logger.out << std::endl;
     }
 }
