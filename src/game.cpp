@@ -84,3 +84,8 @@ void Game::add_piece(string piece, Color color) {
     // piece looks like this: "Pc3"
     board.set_pos_value(piece[2] - 1 - '0', piece[1] - 'a', Piece::char_to_piece(piece[0], color));
 }
+
+// Tries to deduce which castlings are available (used in Edit Mode only)
+void Game::guess_castlings() {
+    board.guess_castlings();
+}

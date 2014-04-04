@@ -8,7 +8,7 @@ Knight::~Knight() {}
 std::vector<unsigned short>
 Knight::get_available_moves(const int row, const int col,
                           const Board& board) {
-    int dir_row[] = {1, 2, 2, 1, -1, -2, -2, 1};
+    int dir_row[] = {1, 2, 2, 1, -1, -2, -2, -1};
     int dir_col[] = {-2, -1, 1, 2, 2, 1, -1, -2};
     std::vector<unsigned short> result;
     for(int i = 0; i < 8; i++) {

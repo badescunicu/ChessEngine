@@ -86,6 +86,7 @@ int main() {
                 g->add_piece(x_command, BLACK);
                 std::getline(std::cin, x_command);
             }
+            g->guess_castlings();
         }
         print_status(logger, force, (g ? g->get_color() : NO_COLOR),
                                     (g ? g->get_color_on_move() : NO_COLOR));

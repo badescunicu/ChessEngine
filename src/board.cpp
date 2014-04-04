@@ -76,12 +76,15 @@ void Board::get_king_position(const Color& color, int& row, int& column) {
     column = (board[8] & (7 << (3 + 6 * color))) >> (3 + 6 * color);
 }
 
-bool Board::valid_castling(const Color& color, CastlingType type) {
+bool Board::valid_castling(const Color& color, CastlingType type) const {
     return board[8] & (((1 << type) << (color << 1)) << 12);
 }
 
-void Board::forbid_castling(const Color& color, CastlingType type) {
-    board[8] &= ~(((1 << type) << (color << 1)) << 12);
+void Board::set_castling(const Color& color, CastlingType type, bool enabled) {
+    if (enabled)
+        board[8] |= ((1 << type) << (color << 1)) << 12;
+    else
+        board[8] &= ~(((1 << type) << (color << 1)) << 12);
 }
 
 Color Board::get_color_on_move() const {
@@ -107,6 +110,19 @@ bool Board::valid_en_passant(int& row, int& column) const {
 void Board::change_turn() {
     if (!(board[8] & (1 << 17))) // if color_on_move != NO_COLOR
         board[8] ^= 1 << 16;
+}
+
+// Used in Force Mode only, after reading all the piece positions
+void Board::guess_castlings() {
+    // At this point, all the castlings are enabled by default
+    if (get_piece(0, 0) != ROOK_W || get_piece(0, 4) != KING_W)
+        set_castling(WHITE, QUEENSIDE, false);
+    if (get_piece(0, 7) != ROOK_W || get_piece(0, 4) != KING_W)
+        set_castling(WHITE, KINGSIDE, false);
+    if (get_piece(7, 0) != ROOK_B || get_piece(7, 4) != KING_B)
+        set_castling(BLACK, QUEENSIDE, false);
+    if (get_piece(7, 7) != ROOK_B || get_piece(7, 4) != KING_B)
+        set_castling(BLACK, KINGSIDE, false);
 }
 
 void Board::apply_move(const unsigned short move) {
@@ -184,9 +200,9 @@ void Board::apply_move(const unsigned short move) {
         Color piece_color = static_cast<Color>(COLOR_OF(piece_moved));
         if (piece_moved == KING_W || piece_moved == KING_B) {
             if (valid_castling(piece_color, QUEENSIDE))
-                forbid_castling(piece_color, QUEENSIDE);
+                set_castling(piece_color, QUEENSIDE, false);
             if (valid_castling(piece_color, KINGSIDE))
-                forbid_castling(piece_color, KINGSIDE);
+                set_castling(piece_color, KINGSIDE, false);
         }
         // If a piece has been moved from the corner, castling in that corner
         // becomes impossible.
@@ -195,7 +211,7 @@ void Board::apply_move(const unsigned short move) {
             Color color = initial_row == 0 ? WHITE : BLACK;
             CastlingType side = initial_column == 0 ? QUEENSIDE : KINGSIDE;
             if (valid_castling(color, side))
-                forbid_castling(color, side);
+                set_castling(color, side, false);
         }
     } else {
         logger.log("No piece is on the given position");
