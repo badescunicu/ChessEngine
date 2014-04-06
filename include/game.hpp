@@ -16,6 +16,9 @@ public:
     void set_color_on_move(const Color color_on_move);
     Color get_color() const;
     Color get_color_on_move() const;
+    bool insuf_material(const int knights[], const int bishops[][2],
+                        const int anything_else[]) const;
+    std::vector<unsigned short> get_all_moves(std::string& game_result) const;
     std::string send_best_move();
     bool get_move(const std::string& move_str);
     void add_piece(const std::string& piece, const Color color);

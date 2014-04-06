@@ -30,6 +30,8 @@ int main() {
     Game *g = NULL;
     Logger logger("low_level_log.txt");
 
+    srand(time(NULL));
+
     // Make the input unbuffered
     std::cin.rdbuf()->pubsetbuf(0, 0);
     std::cout.rdbuf()->pubsetbuf(0, 0);
@@ -63,6 +65,11 @@ int main() {
                 input_output(logger, SENT, "Illegal move: " + last_move_received);
             else if (!force)
                 input_output(logger, SENT, g->send_best_move());
+            else {
+                std::string game_result;
+                if (!g->get_all_moves(game_result).size())
+                    input_output(logger, SENT, game_result);
+            }
         } else if (x_command.find("protover") != std::string::npos) {
             input_output(logger, SENT, "feature done=1 sigint=0 sigterm=0 usermove=1");
             input_output(logger, SENT, "feature myname=\"Carlsen's Apprentices\"");
