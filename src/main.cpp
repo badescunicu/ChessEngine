@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <cstring>
 #include <game.hpp>
 
 enum Mode { SENT, RECEIVED };

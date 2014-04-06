@@ -5,7 +5,7 @@
 #include <piece_type.hpp>
 #include <logger.hpp>
 
-Board::Board(GameType type, const Color& color_on_move) : logger("board_log.txt",
+Board::Board(GameType type, const Color color_on_move) : logger("board_log.txt",
                                                                  "[Board] ") {
     // Initialize the board to 0
     for (int i = 0; i < 9; i++) {
@@ -50,6 +50,11 @@ Board::Board(GameType type, const Color& color_on_move) : logger("board_log.txt"
     }
 }
 
+Board::Board(const Board& initial_board) : logger() {
+    for (int i = 0; i < 9; ++i)
+        board[i] = initial_board.board[i];
+}
+
 Board::~Board() {}
 
 void Board::set_pos_value(const int row, const int column, const PieceType piece) {
@@ -71,16 +76,16 @@ unsigned int Board::get_piece(const int row, const int column) const {
     return ((board[row] & (15 << (column << 2))) >> (column << 2));
 }
 
-void Board::get_king_position(const Color& color, int& row, int& column) {
+void Board::get_king_position(const Color color, int& row, int& column) const {
     row = (board[8] & (7 << (6 * color))) >> (6 * color);
     column = (board[8] & (7 << (3 + 6 * color))) >> (3 + 6 * color);
 }
 
-bool Board::valid_castling(const Color& color, CastlingType type) const {
+bool Board::valid_castling(const Color color, const CastlingType type) const {
     return board[8] & (((1 << type) << (color << 1)) << 12);
 }
 
-void Board::set_castling(const Color& color, CastlingType type, bool enabled) {
+void Board::set_castling(const Color color, const CastlingType type, const bool enabled) {
     if (enabled)
         board[8] |= ((1 << type) << (color << 1)) << 12;
     else
@@ -91,7 +96,7 @@ Color Board::get_color_on_move() const {
     return static_cast<Color>((board[8] & (3 << 16)) >> 16);
 }
 
-void Board::set_color_on_move(const Color& color_on_move) {
+void Board::set_color_on_move(const Color color_on_move) {
     board[8] &= ~(3 << 16);
     board[8] |= color_on_move << 16;
 }
@@ -135,9 +140,9 @@ bool Board::apply_move(const unsigned short move) {
     int destination_column = (move & 3584) >> 9;
     int promoted = (move & 0xF000) >> 12;
 
-    logger.out << "initial_row:"  << initial_row << " initial_column:" <<
-                  initial_column << " destination_row:" << destination_row <<
-                  " destination_column:" << destination_column;
+    logger.out << "initial_row:"  << initial_row << " initial_column:"
+               << initial_column << " destination_row:" << destination_row
+               << " destination_column:" << destination_column;
     if (promoted)
         logger.out << " promoted into: " << promoted;
     logger.out << std::endl;
@@ -240,10 +245,11 @@ bool Board::apply_move(const unsigned short move) {
     return true;
 }
 
-bool Board::check_for_chess(const Color& color) {
+bool Board::checked(const Color color) const {
     int king_row, king_column;
     get_king_position(color, king_row, king_column);
 
+    // check from queen, rook or bishop
     int line_inc[]   = {-1, -1, -1,  0, 0,  1, 1, 1};
     int column_inc[] = {-1,  0,  1, -1, 1, -1, 0, 1};
     for (int dir = 0; dir < 8; ++dir) {
@@ -268,6 +274,7 @@ bool Board::check_for_chess(const Color& color) {
         }
     }
 
+    // check from horse
     int line_jmp[]   = {-1, -2, -2, -1, 1, 2,  2,  1};
     int column_jmp[] = {-2, -1,  1,  2, 2, 1, -1, -2};
     for (int dir = 0; dir < 8; ++dir) {
@@ -280,6 +287,7 @@ bool Board::check_for_chess(const Color& color) {
         }
     }
 
+    // check from pawn
     int pawn_dir = color == WHITE ? 1 : -1;
     if (inside(king_row + pawn_dir)) {
         if (king_column > 0) {
@@ -293,7 +301,13 @@ bool Board::check_for_chess(const Color& color) {
                 return true;
         }
     }
-    
+
+    // check from the other king (possible when simulating a move)
+    int boss_row, boss_column;
+    get_king_position(static_cast<Color>(1 - color), boss_row, boss_column);
+    if (abs(king_row - boss_row) <= 1 && abs(king_column - boss_column) <= 1)
+        return true;
+
     return false;
 }
 

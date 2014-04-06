@@ -16,7 +16,7 @@ Rook::get_available_moves(const int row, const int col,
         int tmp_row = row + dir_row[i];
         int tmp_col = col + dir_col[i];
         while (inside(tmp_row, tmp_col) && !board.get_piece(tmp_row, tmp_col)) {
-            result.push_back(Piece::build_move(row, col, tmp_row, tmp_col));
+            Piece::update_moves(result, Piece::build_move(row, col, tmp_row, tmp_col), board);
             tmp_row += dir_row[i];
             tmp_col += dir_col[i];
         }
@@ -25,7 +25,7 @@ Rook::get_available_moves(const int row, const int col,
         if (inside(tmp_row, tmp_col) &&
             (COLOR_OF(board.get_piece(tmp_row, tmp_col)) ^
              COLOR_OF(board.get_piece(row, col)))) {
-            result.push_back(Piece::build_move(row, col, tmp_row, tmp_col));
+            Piece::update_moves(result, Piece::build_move(row, col, tmp_row, tmp_col), board);
         }
     }
 

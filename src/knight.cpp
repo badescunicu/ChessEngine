@@ -18,7 +18,8 @@ Knight::get_available_moves(const int row, const int col,
            (!board.get_piece(dest_row, dest_col) ||
             (COLOR_OF(board.get_piece(dest_row, dest_col)) ^
              COLOR_OF(board.get_piece(row, col))))) {
-            result.push_back(Piece::build_move(row, col, dest_row, dest_col)); 
+            Piece::update_moves(result, Piece::build_move(row, col, dest_row, dest_col),
+                                board); 
         }
     } 
 
