@@ -19,7 +19,11 @@ public:
     bool insuf_material(const int knights[], const int bishops[][2],
                         const int anything_else[]) const;
     std::vector<unsigned short> get_all_moves(std::string& game_result) const;
+    std::vector<unsigned short> get_all_moves(const Board& board, std::string& game_result) const;
     std::string send_best_move();
+    int eval(const Board& board) const;
+    std::pair<int, unsigned short> alpha_beta(const Board& init, const int depth, int alpha,
+                                              int beta) const;
     bool get_move(const std::string& move_str);
     void add_piece(const std::string& piece, const Color color);
     void guess_castlings();

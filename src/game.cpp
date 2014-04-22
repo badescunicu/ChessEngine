@@ -81,7 +81,11 @@ bool Game::insuf_material(const int knights[], const int bishops[][2],
     return false;
 }
 
-vector<unsigned short> Game::get_all_moves(string& game_result) const { 
+vector<unsigned short> Game::get_all_moves(string& game_result) const {
+    return get_all_moves(board, game_result);
+}
+
+vector<unsigned short> Game::get_all_moves(const Board& board, string& game_result) const { 
     vector<unsigned short> moves;
     int size = BOARD_SIZE;
 
@@ -124,20 +128,75 @@ vector<unsigned short> Game::get_all_moves(string& game_result) const {
 
 string Game::send_best_move() {
     string game_result;
-    vector<unsigned short> moves = get_all_moves(game_result);
+    vector<unsigned short> moves = get_all_moves(board, game_result);
     if (!moves.size())
         return game_result;
-    unsigned short move = moves[rand() % moves.size()];
+    //unsigned short move = moves[rand() % moves.size()];
+    unsigned short move = alpha_beta(board, 4, -INF, INF).second;
     board.apply_move(move);
     string ret = "move " + Piece::move_to_string(move);
 
     // Check if the opponent can move
-    moves = get_all_moves(game_result);
+    moves = get_all_moves(board, game_result);
     if (!moves.size())
         return ret + "\n" + game_result;
 
     return ret;
-} 
+}
+
+// evaluation function for Alpha-Beta
+int Game::eval(const Board& board) const {
+    int score = 0;
+    Color on_move = board.get_color_on_move();
+    for (int i = 0; i < BOARD_SIZE; ++i)
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            PieceType piece = static_cast<PieceType>(board.get_piece(i, j));
+            int value;
+            switch (piece) {
+                case PAWN_W: case PAWN_B: value = 1; break;
+                case KNIGHT_W: case KNIGHT_B: value = 3; break;
+                case BISHOP_W: case BISHOP_B: value = 3; break;
+                case ROOK_W: case ROOK_B: value = 5; break;
+                case QUEEN_W: case QUEEN_B: value = 9; break;
+                default: value = 0;
+            }
+            if (!(COLOR_OF(piece) ^ on_move))
+                score += value;
+            else
+                score -= value;
+        }
+    return score;
+}
+
+std::pair<int, unsigned short> Game::alpha_beta(const Board& init, const int depth,
+                                                int alpha, int beta) const {
+    if (!depth)
+        return std::pair<int, unsigned short>(eval(init), 0); 
+    string game_result;
+    vector<unsigned short> moves = get_all_moves(init, game_result);
+    if (!moves.size()) {
+        Color winner = NO_COLOR;
+        if (game_result.substr(0, 3) == "0-1")
+            winner = BLACK;
+        else if (game_result.substr(0, 3) == "1-0")
+            winner = WHITE;
+        int score = init.get_color_on_move() == winner ? INF : -INF;
+        return std::pair<int, unsigned short>(score, 0);
+    }
+    int move_index = -1;
+    for (unsigned int i = 0; i < moves.size(); ++i) {
+        Board next = Board(init);
+        next.apply_move(moves[i]);
+        int score = -alpha_beta(next, depth - 1, -beta, -alpha).first;
+        if (score >= beta)
+            return std::pair<int, unsigned short>(beta, moves[i]);
+        if (score > alpha) {
+            alpha = score;
+            move_index = i;
+        }
+    }
+    return std::pair<int, unsigned short>(alpha, moves[move_index]);
+}
 
 bool Game::get_move(const string& move_str) {
     return board.apply_move(Piece::string_to_move(move_str, board.get_color_on_move()));

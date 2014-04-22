@@ -5,6 +5,7 @@
 
 #define BOARD_SIZE 8
 #define COLOR_OF(piece) ((piece & 8) >> 3)
+#define INF 0xFFFFFFF
 
 enum Color { WHITE, BLACK, NO_COLOR };
 enum GameType { DEFAULT, CUSTOM };

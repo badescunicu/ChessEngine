@@ -131,8 +131,8 @@ void Board::guess_castlings() {
 }
 
 bool Board::apply_move(const unsigned short move) {
-    logger.log("Entered in apply_move. Decoding move");
-    logger.log_binary(&move, sizeof(unsigned short));
+    //logger.log("Entered in apply_move. Decoding move");
+    //logger.log_binary(&move, sizeof(unsigned short));
 
     int initial_row = move & 7;
     int initial_column = (move & 56) >> 3;
@@ -140,19 +140,19 @@ bool Board::apply_move(const unsigned short move) {
     int destination_column = (move & 3584) >> 9;
     int promoted = (move & 0xF000) >> 12;
 
-    logger.out << "initial_row:"  << initial_row << " initial_column:"
+    /*logger.out << "initial_row:"  << initial_row << " initial_column:"
                << initial_column << " destination_row:" << destination_row
                << " destination_column:" << destination_column;
     if (promoted)
         logger.out << " promoted into: " << promoted;
-    logger.out << std::endl;
+    logger.out << std::endl;*/
 
     PieceType piece_moved = static_cast<PieceType>(get_piece(initial_row,
                                                    initial_column));
     PieceType after_promotion = static_cast<PieceType>(promoted);
 
     if (piece_moved != NONE) {
-        logger.log("Making move");
+        //logger.log("Making move");
         set_pos_value(initial_row, initial_column, NONE);
 
         // Check for en passant, possibly taking the opponent's pawn
@@ -165,7 +165,7 @@ bool Board::apply_move(const unsigned short move) {
                 set_pos_value(initial_row, destination_column, NONE);
             else {
                 // Restore to the initial board and reject the move
-                logger.log("Move rejected");
+                //logger.log("Move rejected");
                 set_pos_value(initial_row, initial_column, piece_moved);
                 return false;
             }
@@ -212,7 +212,7 @@ bool Board::apply_move(const unsigned short move) {
                                            (piece_moved == KING_B ? ROOK_B : ROOK_W));
             } else {
                 // Restore to the initial board and reject the move
-                logger.log("Invalid move.");
+                //logger.log("Invalid move.");
                 set_pos_value(initial_row, initial_column, piece_moved);
                 set_pos_value(destination_row, destination_column, NONE);
                 return false;
@@ -238,10 +238,9 @@ bool Board::apply_move(const unsigned short move) {
                 set_castling(color, side, false);
         }
     } else {
-        logger.log("No piece is on the given position");
+        //logger.log("No piece is on the given position");
     }
     change_turn();
-    print();
     return true;
 }
 
@@ -274,7 +273,7 @@ bool Board::checked(const Color color) const {
         }
     }
 
-    // check from horse
+    // check from knight
     int line_jmp[]   = {-1, -2, -2, -1, 1, 2,  2,  1};
     int column_jmp[] = {-2, -1,  1,  2, 2, 1, -1, -2};
     for (int dir = 0; dir < 8; ++dir) {
