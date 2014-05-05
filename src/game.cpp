@@ -172,6 +172,7 @@ std::pair<int, unsigned short> Game::alpha_beta(const Board& init, const int dep
                                                 int alpha, int beta) const {
     if (!depth)
         return std::pair<int, unsigned short>(eval(init), 0); 
+
     string game_result;
     vector<unsigned short> moves = get_all_moves(init, game_result);
     if (!moves.size()) {
@@ -183,18 +184,23 @@ std::pair<int, unsigned short> Game::alpha_beta(const Board& init, const int dep
         int score = init.get_color_on_move() == winner ? INF : -INF;
         return std::pair<int, unsigned short>(score, 0);
     }
-    int move_index = -1;
+
+    int move_index = 0;
+
     for (unsigned int i = 0; i < moves.size(); ++i) {
         Board next = Board(init);
         next.apply_move(moves[i]);
         int score = -alpha_beta(next, depth - 1, -beta, -alpha).first;
-        if (score >= beta)
-            return std::pair<int, unsigned short>(beta, moves[i]);
+
         if (score > alpha) {
             alpha = score;
             move_index = i;
         }
+
+        if(alpha >= beta)
+            break;
     }
+
     return std::pair<int, unsigned short>(alpha, moves[move_index]);
 }
 
