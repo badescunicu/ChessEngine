@@ -145,15 +145,40 @@ string Game::send_best_move() {
 }
 
 // evaluation function for Alpha-Beta
-int Game::eval(const Board& board) const {
+float Game::eval(const Board& board) const {
     int score = 0;
     Color on_move = board.get_color_on_move();
+
+    // for each color, bits are set whether there are pawns on that column or not
+    unsigned char pawns_on_file[2];
+    // keeps the line of the most backward pawn on the file
+    char pawn_line[2][BOARD_SIZE];
+    // for each player, keeps a list with the columns of pawns
+    std::vector<char> pawn_files[2];
+
+    pawn_files[0].reserve(BOARD_SIZE);
+    pawn_files[1].reserve(BOARD_SIZE);
+    pawns_on_file[0] = pawns_on_file[1] = 0;
+
     for (int i = 0; i < BOARD_SIZE; ++i)
         for (int j = 0; j < BOARD_SIZE; ++j) {
             PieceType piece = static_cast<PieceType>(board.get_piece(i, j));
-            int value;
+            float value;
             switch (piece) {
-                case PAWN_W: case PAWN_B: value = 1; break;
+                case PAWN_W: case PAWN_B: {
+                    Color color = static_cast<Color>(COLOR_OF(piece));
+                    value = 1;
+                    pawn_files[color].push_back(j);
+                    if (pawns_on_file[color] & (1 << j))
+                        value -= 0.5; // doubled pawn
+                    else
+                        pawns_on_file[color] |= 1 << j;
+                    if (color == WHITE)
+                        pawn_line[color][j] = i < pawn_line[color][j] ? i : pawn_line[color][j];
+                    else
+                        pawn_line[color][j] = i > pawn_line[color][j] ? i : pawn_line[color][j];
+                }
+                break;
                 case KNIGHT_W: case KNIGHT_B: value = 3; break;
                 case BISHOP_W: case BISHOP_B: value = 3; break;
                 case ROOK_W: case ROOK_B: value = 5; break;
@@ -165,11 +190,48 @@ int Game::eval(const Board& board) const {
             else
                 score -= value;
         }
+    // count isolated pawns
+    for (int color = 0; color <= 1; ++color)
+        for (unsigned int i = 0; i < pawn_files[color].size(); ++i) {
+            char column = pawn_files[color][i];
+            if ((!column || ((pawns_on_file[color] & (1 << (column - 1))) == 0)) &&
+                ((column == BOARD_SIZE - 1) || ((pawns_on_file[color] & (1 << (column + 1))) == 0))) {
+                if (color == on_move)
+                    score -= 0.5;
+                else
+                    score += 0.5;
+            }
+        }
+    // count backward pawns
+    for (int color = 0; color <= 1; ++color)
+        for (int file = 0; file < BOARD_SIZE; ++file)
+            if (pawns_on_file[color] & (1 << file)) {
+                // if there is a pawn behind on the left
+                if (file > 0 && (pawns_on_file[color] & (1 << (file - 1))))
+                    if ((color == WHITE && pawn_line[color][file - 1] <= pawn_line[color][file]) ||
+                        (color == BLACK && pawn_line[color][file - 1] >= pawn_line[color][file]))
+                        continue;
+                bool backward = true;
+                // if there is a pawn behind on the right
+                if (file < BOARD_SIZE - 1 && (pawns_on_file[color] & (1 << (file + 1)))) {
+                    if ((color == WHITE && pawn_line[color][file + 1] <= pawn_line[color][file]) ||
+                        (color == BLACK && pawn_line[color][file + 1] >= pawn_line[color][file]))
+                        backward = false;
+                    else
+                        backward = true;
+                }
+                if (backward) {
+                    if (color == on_move)
+                        score -= 0.5;
+                    else
+                        score += 0.5;
+                }
+            }
     return score;
 }
 
-std::pair<int, unsigned short> Game::alpha_beta(const Board& init, const int depth,
-                                                int alpha, int beta) const {
+std::pair<float, unsigned short> Game::alpha_beta(const Board& init, const int depth,
+                                                  float alpha, float beta) const {
     if (!depth)
         return std::pair<int, unsigned short>(eval(init), 0); 
 
@@ -181,7 +243,7 @@ std::pair<int, unsigned short> Game::alpha_beta(const Board& init, const int dep
             winner = BLACK;
         else if (game_result.substr(0, 3) == "1-0")
             winner = WHITE;
-        int score = init.get_color_on_move() == winner ? INF : -INF;
+        float score = init.get_color_on_move() == winner ? INF : -INF;
         return std::pair<int, unsigned short>(score, 0);
     }
 
@@ -190,7 +252,7 @@ std::pair<int, unsigned short> Game::alpha_beta(const Board& init, const int dep
     for (unsigned int i = 0; i < moves.size(); ++i) {
         Board next = Board(init);
         next.apply_move(moves[i]);
-        int score = -alpha_beta(next, depth - 1, -beta, -alpha).first;
+        float score = -alpha_beta(next, depth - 1, -beta, -alpha).first;
 
         if (score > alpha) {
             alpha = score;
@@ -201,7 +263,7 @@ std::pair<int, unsigned short> Game::alpha_beta(const Board& init, const int dep
             break;
     }
 
-    return std::pair<int, unsigned short>(alpha, moves[move_index]);
+    return std::pair<float, unsigned short>(alpha, moves[move_index]);
 }
 
 bool Game::get_move(const string& move_str) {
