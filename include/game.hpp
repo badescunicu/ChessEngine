@@ -3,11 +3,16 @@
 #include <vector>
 #include "piece.hpp"
 
+#define NO_PARENT 0xFFFFF
+
 class Game {
 private:
     Board board;
     Color my_color;
     std::vector<Piece *> pieces;
+    std::ifstream database;
+    int current_node, last_node_read;
+    class NodeRecord;
 public:
     Game(const Color my_color, const Color color_on_move, const GameType type);
     ~Game();

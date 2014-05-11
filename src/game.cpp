@@ -18,6 +18,14 @@ using std::make_pair;
 using std::vector;
 using std::ofstream;
 
+class Game::NodeRecord {
+public:
+    NodeRecord() : dad(NO_PARENT), move(0) { };
+    NodeRecord(const unsigned int dad, const unsigned short move) : dad(dad), move(move) { };
+    unsigned int dad :20;
+    unsigned short move :12;
+};
+
 Game::Game(const Color my_color, const Color color_on_move, const GameType type) :
         board(type, color_on_move), my_color(my_color), pieces(7) {
     pieces[1] = new Pawn();
@@ -26,11 +34,19 @@ Game::Game(const Color my_color, const Color color_on_move, const GameType type)
     pieces[4] = new Rook();
     pieces[5] = new Queen();
     pieces[6] = new King();
+
+    if (type == DEFAULT) {
+        database.open("database", std::ifstream::in | std::ifstream::binary);
+        current_node = 0;
+        last_node_read = 0;
+    }
 }
 
 Game::~Game() {
     for (int i = 1; i < 7; ++i)
         delete pieces[i];
+    if (database.is_open())
+        database.close();
 }
 
 bool Game::checked(const Color color) const {
@@ -131,8 +147,25 @@ string Game::send_best_move() {
     vector<unsigned short> moves = get_all_moves(board, game_result);
     if (!moves.size())
         return game_result;
-    //unsigned short move = moves[rand() % moves.size()];
-    unsigned short move = alpha_beta(board, 4, -INF, INF).second;
+
+    unsigned short move;
+    bool found_in_database = false;
+    if (database.is_open()) {
+        NodeRecord to_read;
+        while (to_read.dad != current_node && !database.eof()) {
+            database.read((char *)&to_read, sizeof(NodeRecord));
+            ++last_node_read;
+        }
+        if (database.eof())
+            database.close();
+        else {
+            move = to_read.move;
+            found_in_database = true;
+            current_node = last_node_read;
+        }
+    }
+    if (!found_in_database)
+        move = alpha_beta(board, 4, -INF, INF).second;
     board.apply_move(move);
     string ret = "move " + Piece::move_to_string(move);
 
@@ -267,7 +300,20 @@ std::pair<float, unsigned short> Game::alpha_beta(const Board& init, const int d
 }
 
 bool Game::get_move(const string& move_str) {
-    return board.apply_move(Piece::string_to_move(move_str, board.get_color_on_move()));
+    unsigned short move = Piece::string_to_move(move_str, board.get_color_on_move());
+    // advance in tree
+    if (database.is_open()) {
+        NodeRecord to_read;
+        while ((to_read.dad != current_node || to_read.move != move) && !database.eof()) {
+            database.read((char *)&to_read, sizeof(NodeRecord));
+            ++last_node_read;
+        }
+        if (database.eof())
+            database.close();
+        else
+            current_node = last_node_read;
+    }
+    return board.apply_move(move);
 }
 
 void Game::add_piece(const string& piece, const Color color) {
