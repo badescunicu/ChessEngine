@@ -1,0 +1,32 @@
+In order to generate a database of openings:
+
+1. You need a *.PGN file that includes the games upon which the output will be
+created. If you want to get the database that was used for this project,
+download ChessDB[1] and follow the steps from the link below[2], then load the
+SCID database and export it as *.PGN[3].
+
+2. Make sure that the moves are recorded using the UCI notation. If you followed
+the step above, the algebraic notation will be used by default. You can use
+pgn-extract[4] to make the conversion:
+
+   $ ./pgn-extract -Wuci games_san.pgn > games_uci.pgn
+
+3. Go into openings_generator.cpp and change MAX_DEPTH to the maximum number of
+moves that you want to be stored for a game.
+
+4. Compile openings_generator:
+
+   $ make
+
+   And launch it like this:
+
+   $ ./openings_generator < games_uci.pgn
+
+   It will create a binary file called output, that will store the database as a
+tree (see NodeRecord in openings_generator.cpp).
+
+--------------------------------------------------------------------------------
+[1] http://chessdb.sourceforge.net/
+[2] http://chessdb.sourceforge.net/tutorial/download_a_database.php
+[3] http://scid.sourceforge.net/help/Export.html
+[4] http://www.cs.kent.ac.uk/people/staff/djb/pgn-extract/

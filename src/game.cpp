@@ -1,115 +1,327 @@
+#include <cassert>
 #include <iostream>
 #include <fstream>
-#include <cstring>
-#include <cstdlib>
-#include <game.hpp>
+#include <functional>
+#include <ctime>
+#include <vector>
+#include "game.hpp"
+#include "piece.hpp"
+#include "pawn.hpp"
+#include "knight.hpp"
+#include "bishop.hpp"
+#include "rook.hpp"
+#include "queen.hpp"
+#include "king.hpp"
 
-void change_turn(Color &color) {
-    if (color == WHITE)
-      color = BLACK;
-    else if (color == BLACK)
-      color = WHITE;
+using std::string;
+using std::make_pair;
+using std::vector;
+using std::ofstream;
+
+class Game::NodeRecord {
+public:
+    NodeRecord() : dad(NO_PARENT), move(0) { };
+    NodeRecord(const unsigned int dad, const unsigned short move) : dad(dad), move(move) { };
+    unsigned int dad :20;
+    unsigned short move :12;
+};
+
+Game::Game(const Color my_color, const Color color_on_move, const GameType type) :
+        board(type, color_on_move), my_color(my_color), pieces(7) {
+    pieces[1] = new Pawn();
+    pieces[2] = new Knight();
+    pieces[3] = new Bishop();
+    pieces[4] = new Rook();
+    pieces[5] = new Queen();
+    pieces[6] = new King();
+
+    if (type == DEFAULT) {
+        database.open("database", std::ifstream::in | std::ifstream::binary);
+        current_node = 0;
+        last_node_read = 0;
+    }
 }
 
-void output(std::ofstream &log, std::string text) {
-    log << "Sent:     " << text << "\n";
-    log.flush();
-    std::cout << text << "\n";
+Game::~Game() {
+    for (int i = 1; i < 7; ++i)
+        delete pieces[i];
+    if (database.is_open())
+        database.close();
 }
 
-void print_status(std::ofstream &log, bool force, Color me, Color on_move)
-{
-    log << "Status:   I'm ";
-    switch (me) {
-      case WHITE: log << " WHITE"; break;
-      case BLACK: log << " BLACK"; break;
-      default:    log << "NOBODY";
-    }
-    log << ". It's ";
-    switch (on_move) {
-      case WHITE: log << " WHITE"; break;
-      case BLACK: log << " BLACK"; break;
-      default:    log << "NOBODY";
-    }
-    log << "'s turn. Force mode: " << (force ? " On." : "Off.") << "\n";
-    log.flush();
+bool Game::checked(const Color color) const {
+    return board.checked(color);
 }
 
-int main() {
-    bool force = false;
-    Color color_on_move = NO_COLOR, last_color_received = NO_COLOR;
-    std::string x_command, last_move_received;
-    Game *g = NULL;
+void Game::set_color(const Color my_color) {
+    this->my_color = my_color;
+}
 
-    std::ofstream log("log");
-    // Make the input unbuffered
-    std::cin.rdbuf()->pubsetbuf(0, 0);
-    std::cout.rdbuf()->pubsetbuf(0, 0);
+void Game::set_color_on_move(const Color color_on_move) {
+    board.set_color_on_move(color_on_move);
+}
 
-    while (1) {
-      std::getline(std::cin, x_command);
-      log << "Received: " << x_command << '\n';
-      log.flush();
-      if (x_command == "xboard") {
-        output(log, "");
-      } else if (x_command == "new") {
-        force = false;
-        color_on_move = WHITE;
-        last_move_received = string();
-        if (g)
-          delete g;
-        g = new Game(BLACK, DEFAULT);
-      } else if (x_command ==  "quit") {
-        return 0;
-      } else if (x_command ==  "force") {
-        force = true;
-        if (g)
-          g->set_color(NO_COLOR);
-      } else if (x_command ==  "go") {
-        force = false;
-        if (color_on_move == NO_COLOR)
-           color_on_move = last_color_received;
-        g->set_color(color_on_move);
-        output(log, g->send_best_move());
-        change_turn(color_on_move);
-      } else if (x_command.find("usermove") == 0) {
-        last_move_received = x_command.substr(9);
-        if (force) {
-          g->get_move(last_move_received);
-          change_turn(color_on_move);
-        } else {
-          change_turn(color_on_move);
-          g->get_move(last_move_received);
-          output(log, g->send_best_move());
-          change_turn(color_on_move);
+Color Game::get_color() const {
+    return my_color;
+}
+
+Color Game::get_color_on_move() const {
+    return board.get_color_on_move();
+}
+
+bool Game::insuf_material(const int knights[], const int bishops[][2],
+                          const int anything_else[]) const {
+    if (anything_else[0] || anything_else[1])
+        return false;
+
+    // King vs King
+    if (!knights[0] && !knights[1] &&
+        !bishops[0][0] && !bishops[0][1] && !bishops[1][0] && !bishops[1][1])
+        return true;
+
+    // King and Bishop vs King
+    if (!knights[0] && !knights[1] &&
+        (bishops[0][0] + bishops[0][1] + bishops[1][0] + bishops[1][1] == 1))
+        return true;
+
+    // King and Knight vs King
+    if (knights[0] + knights[1] == 1 &&
+        !bishops[0][0] && !bishops[0][1] && !bishops[1][0] && !bishops[1][1])
+        return true;
+
+    // King and Bishops vs King and Bishops, all the Bishops of the same color
+    if ((!knights[0] && !knights[1]) &&
+        ((!bishops[0][0] && !bishops[0][1]) || (!bishops[1][0] && !bishops[1][1])))
+        return true;
+
+    return false;
+}
+
+vector<unsigned short> Game::get_all_moves(string& game_result) const {
+    return get_all_moves(board, game_result);
+}
+
+vector<unsigned short> Game::get_all_moves(const Board& board, string& game_result) const { 
+    vector<unsigned short> moves;
+    int size = BOARD_SIZE;
+
+    int knights[2] = {};
+    int bishops[2][2] = {}; // Dimension signification: [square_color][piece_color]
+    int anything_else[2] = {};
+
+    Color on_move = board.get_color_on_move();
+    for (int i = 0; i < size; i++)
+        for (int j = 0; j < size; j++) {
+            PieceType piece = static_cast<PieceType>(board.get_piece(i, j));
+            if (piece) {
+                if (!(COLOR_OF(piece) ^ on_move)) {
+                    vector<unsigned short> valid_moves = pieces[piece & 7]->get_available_moves(i, j, board);
+                    moves.insert(moves.end(), valid_moves.begin(), valid_moves.end());
+                }
+                if (piece == KNIGHT_W || piece == KNIGHT_B)
+                    ++knights[COLOR_OF(piece)];
+                else if (piece == BISHOP_W || piece == BISHOP_B)
+                    ++bishops[(i & 1) ^ (j & 1)][COLOR_OF(piece)];
+                else if (piece != KING_W && piece != KING_B)
+                    ++anything_else[COLOR_OF(piece)];
+            }
         }
-      } else if (x_command.find("protover") != string::npos) {
-        output(log, "feature done=1 sigint=0 sigterm=0 usermove=1");
-        output(log, "feature myname=\"Carlsen's Apprentices\"");
-      } else if (x_command ==  "white") {
-        last_color_received = WHITE;
-      } else if (x_command ==  "black") {
-        last_color_received = BLACK;
-      } else if (x_command ==  "edit") {
-        if (g)
-          delete g;
-        g = new Game(NO_COLOR, CUSTOM);
-        last_move_received = string();
-        color_on_move = NO_COLOR;
-        std::getline(std::cin, x_command); // skipping '#'
-        std::getline(std::cin, x_command);
-        while (x_command != "c") {
-          g->add_piece(x_command, WHITE);
-          std::getline(std::cin, x_command);
+    if (insuf_material(knights, bishops, anything_else)) {
+        game_result = "1/2-1/2 {Insufficient mating material}";
+        moves.clear();
+    } else if (!moves.size()) {
+        if (board.checked(board.get_color_on_move())) {
+            if (board.get_color_on_move() == WHITE)
+                game_result = "0-1 {Black mates}";
+            else
+                game_result = "1-0 {White mates}";
+        } else
+            game_result = "1/2-1/2 {Stalemate}";
+    } else
+        game_result = "";
+    return moves;
+}
+
+string Game::send_best_move() {
+    string game_result;
+    vector<unsigned short> moves = get_all_moves(board, game_result);
+    if (!moves.size())
+        return game_result;
+
+    unsigned short move;
+    bool found_in_database = false;
+    if (database.is_open()) {
+        NodeRecord to_read;
+        while (to_read.dad != current_node && !database.eof()) {
+            database.read((char *)&to_read, sizeof(NodeRecord));
+            ++last_node_read;
         }
-        std::getline(std::cin, x_command);
-        while (x_command != ".") {
-          g->add_piece(x_command, BLACK);
-          std::getline(std::cin, x_command);
+        if (database.eof())
+            database.close();
+        else {
+            move = to_read.move;
+            found_in_database = true;
+            current_node = last_node_read;
         }
-      }
-      print_status(log, force, (g ? g->get_color() : NO_COLOR), color_on_move);
     }
-    delete g;
-    return 0;
+    if (!found_in_database)
+        move = alpha_beta(board, 4, -INF, INF).second;
+    board.apply_move(move);
+    string ret = "move " + Piece::move_to_string(move);
+
+    // Check if the opponent can move
+    moves = get_all_moves(board, game_result);
+    if (!moves.size())
+        return ret + "\n" + game_result;
+
+    return ret;
+}
+
+// evaluation function for Alpha-Beta
+float Game::eval(const Board& board) const {
+    int score = 0;
+    Color on_move = board.get_color_on_move();
+
+    // for each color, bits are set whether there are pawns on that column or not
+    unsigned char pawns_on_file[2];
+    // keeps the line of the most backward pawn on the file
+    char pawn_line[2][BOARD_SIZE];
+    // for each player, keeps a list with the columns of pawns
+    std::vector<char> pawn_files[2];
+
+    pawn_files[0].reserve(BOARD_SIZE);
+    pawn_files[1].reserve(BOARD_SIZE);
+    pawns_on_file[0] = pawns_on_file[1] = 0;
+
+    for (int i = 0; i < BOARD_SIZE; ++i)
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            PieceType piece = static_cast<PieceType>(board.get_piece(i, j));
+            float value;
+            switch (piece) {
+                case PAWN_W: case PAWN_B: {
+                    Color color = static_cast<Color>(COLOR_OF(piece));
+                    value = 1;
+                    pawn_files[color].push_back(j);
+                    if (pawns_on_file[color] & (1 << j))
+                        value -= 0.5; // doubled pawn
+                    else
+                        pawns_on_file[color] |= 1 << j;
+                    if (color == WHITE)
+                        pawn_line[color][j] = i < pawn_line[color][j] ? i : pawn_line[color][j];
+                    else
+                        pawn_line[color][j] = i > pawn_line[color][j] ? i : pawn_line[color][j];
+                }
+                break;
+                case KNIGHT_W: case KNIGHT_B: value = 3; break;
+                case BISHOP_W: case BISHOP_B: value = 3; break;
+                case ROOK_W: case ROOK_B: value = 5; break;
+                case QUEEN_W: case QUEEN_B: value = 9; break;
+                default: value = 0;
+            }
+            if (!(COLOR_OF(piece) ^ on_move))
+                score += value;
+            else
+                score -= value;
+        }
+    // count isolated pawns
+    for (int color = 0; color <= 1; ++color)
+        for (unsigned int i = 0; i < pawn_files[color].size(); ++i) {
+            char column = pawn_files[color][i];
+            if ((!column || ((pawns_on_file[color] & (1 << (column - 1))) == 0)) &&
+                ((column == BOARD_SIZE - 1) || ((pawns_on_file[color] & (1 << (column + 1))) == 0))) {
+                if (color == on_move)
+                    score -= 0.5;
+                else
+                    score += 0.5;
+            }
+        }
+    // count backward pawns
+    for (int color = 0; color <= 1; ++color)
+        for (int file = 0; file < BOARD_SIZE; ++file)
+            if (pawns_on_file[color] & (1 << file)) {
+                // if there is a pawn behind on the left
+                if (file > 0 && (pawns_on_file[color] & (1 << (file - 1))))
+                    if ((color == WHITE && pawn_line[color][file - 1] <= pawn_line[color][file]) ||
+                        (color == BLACK && pawn_line[color][file - 1] >= pawn_line[color][file]))
+                        continue;
+                bool backward = true;
+                // if there is a pawn behind on the right
+                if (file < BOARD_SIZE - 1 && (pawns_on_file[color] & (1 << (file + 1)))) {
+                    if ((color == WHITE && pawn_line[color][file + 1] <= pawn_line[color][file]) ||
+                        (color == BLACK && pawn_line[color][file + 1] >= pawn_line[color][file]))
+                        backward = false;
+                    else
+                        backward = true;
+                }
+                if (backward) {
+                    if (color == on_move)
+                        score -= 0.5;
+                    else
+                        score += 0.5;
+                }
+            }
+    return score;
+}
+
+std::pair<float, unsigned short> Game::alpha_beta(const Board& init, const int depth,
+                                                  float alpha, float beta) const {
+    if (!depth)
+        return std::pair<int, unsigned short>(eval(init), 0); 
+
+    string game_result;
+    vector<unsigned short> moves = get_all_moves(init, game_result);
+    if (!moves.size()) {
+        Color winner = NO_COLOR;
+        if (game_result.substr(0, 3) == "0-1")
+            winner = BLACK;
+        else if (game_result.substr(0, 3) == "1-0")
+            winner = WHITE;
+        float score = init.get_color_on_move() == winner ? INF : -INF;
+        return std::pair<int, unsigned short>(score, 0);
+    }
+
+    int move_index = 0;
+
+    for (unsigned int i = 0; i < moves.size(); ++i) {
+        Board next = Board(init);
+        next.apply_move(moves[i]);
+        float score = -alpha_beta(next, depth - 1, -beta, -alpha).first;
+
+        if (score > alpha) {
+            alpha = score;
+            move_index = i;
+        }
+
+        if(alpha >= beta)
+            break;
+    }
+
+    return std::pair<float, unsigned short>(alpha, moves[move_index]);
+}
+
+bool Game::get_move(const string& move_str) {
+    unsigned short move = Piece::string_to_move(move_str, board.get_color_on_move());
+    // advance in tree
+    if (database.is_open()) {
+        NodeRecord to_read;
+        while ((to_read.dad != current_node || to_read.move != move) && !database.eof()) {
+            database.read((char *)&to_read, sizeof(NodeRecord));
+            ++last_node_read;
+        }
+        if (database.eof())
+            database.close();
+        else
+            current_node = last_node_read;
+    }
+    return board.apply_move(move);
+}
+
+void Game::add_piece(const string& piece, const Color color) {
+    // piece looks like this: "Pc3"
+    board.set_pos_value(piece[2] - 1 - '0', piece[1] - 'a', Piece::char_to_piece(piece[0], color));
+}
+
+// Tries to deduce which castlings are available (used in Edit Mode only)
+void Game::guess_castlings() {
+    board.guess_castlings();
 }

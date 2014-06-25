@@ -1,102 +1,40 @@
-#ifndef _PIECE_
-#define _PIECE_
+#ifndef __PIECE__HPP
+#define __PIECE__HPP
 #include <vector>
-#include <utility>
-#include <functional>
-/*
- * Value in Pawns for every Piece
- */
-#define PAWN_VALUE 1
-#define BISHOP_VALUE 3 
-#define KNIGHT_VALUE 4
-#define ROOK_VALUE 5
-#define QUEEN_VALUE 8
-#define KING_VALUE 0
-
-typedef std::pair<int, int> Position;
-typedef std::pair<Position, Position> Move;
-enum Color { WHITE, BLACK, NO_COLOR };
-
-using std::make_pair;
-using std::vector;
+#include <board.hpp>
 
 class Piece {
 public:
-  virtual ~Piece() {
-  }
-  virtual vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) = 0;
-  void do_move(const Position& pos) {
-    this->pos = pos;
-  } 
+    Piece();
+    static PieceType char_to_piece(char c, const Color color);
+    static std::string move_to_string(const unsigned short move);
+    static unsigned short string_to_move(const std::string& moveStr,
+                                         const Color piece_color);
 
-  Piece(int value, const Position& pos, const Color& color) : color(color), pos(pos), value(value) {} 
-  Piece(int value) : value(value) {} 
-  Color color;
-  int getValue() { return value; }
-protected:  
-  int value;
-  Position pos;
+    // regular move
+    static unsigned short build_move(const int initial_row,
+                              const int initial_column,
+                              const int destination_row,
+                              const int destination_column);
+    // pawn promotion
+    static unsigned short build_move(const int initial_row,
+                              const int initial_column,
+                              const int destination_row,
+                              const int destination_column,
+                              const PieceType promoted);
+
+    // checks if not in check after making a move
+    static bool safe(const unsigned short move, const Board& board);
+
+    // retains a move if it is safe
+    static void update_moves(std::vector<unsigned short>& result,
+                             const unsigned short move,
+                             const Board& board);
+
+    virtual std::vector<unsigned short>
+    get_available_moves(const int row, const int col,
+                            const Board& board) = 0;
+    virtual ~Piece();
 };
 
-class Pawn : public Piece {
-public:
-  Pawn() : Piece(PAWN_VALUE) {}
-  Pawn(const Position& pos, const Color& color) : Piece(PAWN_VALUE, pos, color) {}
-  vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
-    return vector<Move>();
-  } 
-};
-
-class Bishop : public Piece {
-public:
-  Bishop() : Piece(BISHOP_VALUE) {}
-  Bishop(const Position& pos, const Color& color) : Piece(BISHOP_VALUE, pos, color) {}
-  vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
-    return vector<Move>();
-  } 
-};
-
-class Knight : public Piece {
-public:
-  Knight() : Piece(KNIGHT_VALUE) {}
-  Knight(const Position& pos, const Color& color) : Piece(KNIGHT_VALUE, pos, color) {}
-  vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
-    std::cout << this->pos.first << ' ' << this->pos.second << '\n';
-    int dl[] = {1, 2, 2, 1, -1, -2, -2, 1};
-    int dc[] = {-2, -1, 1, 2, 2, 1, -1, -2};
-    vector<Move> ret;
-    for(int i = 0; i < 8; i++)
-      if(valid(pos.first + dl[i], pos.second + dc[i]))
-        ret.push_back(make_pair(this->pos,
-                      make_pair(pos.first + dl[i], pos.second + dc[i])));
-    return ret;
-  } 
-};
-
-class Rook : public Piece {
-public:
-  Rook() : Piece(ROOK_VALUE) {}
-  Rook(const Position& pos, const Color& color) : Piece(ROOK_VALUE, pos, color) {}
-  vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
-    return vector<Move>();
-  }
-};
-
-class Queen : public Piece {
-public:
-  Queen() : Piece(QUEEN_VALUE) {}
-  Queen(const Position& pos, const Color& color) : Piece(QUEEN_VALUE, pos, color) {}
-  vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
-    return std::vector<Move>();
-  }
-};
-
-class King : public Piece {
-public:
-  King() : Piece(KING_VALUE) {}
-  King(const Position& pos, const Color& color) : Piece(KING_VALUE, pos, color) {} 
-  vector<Move> get_all_moves(const std::function<bool(int, int)>& valid) {
-    return vector<Move>();
-  }
-};
 #endif

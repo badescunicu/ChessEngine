@@ -1,0 +1,19 @@
+# This simple example is used for demonstration purposes. You can suppose that
+# all the games listed below end by resign.
+
+# Inspect the output tree to see how childs of the same node get ordered. You
+# may also notice that useless nodes (those corresponding to states that are
+# never reached due to the previous choices of the engine) are not kept.
+
+a2a3 f7f5 0-1
+a2a3 g8f6 g1f3 1-0
+a2a3 g8f6 f2f4 1-0
+a2a3 g8f6 g1f3 1-0
+b1c3 b7b6 f2f4 1-0
+b1c3 b7b6 g1f3 1-0
+b1c3 e7e6 g2g3 1-0
+b1c3 b7b6 f2f4 1-0
+b1c3 e7e6 d2d4 1-0
+b1c3 d7d5 d2d3 1-0
+b1c3 e7e6 g2g3 1-0
+d2d4 1-0
